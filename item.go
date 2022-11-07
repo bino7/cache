@@ -10,7 +10,7 @@ type Item interface {
 	Key
 	Get() (any, error)
 	Update() error
-	Delete() error
+	Del() error
 	CacheErr() error
 	Static() bool
 	Valid() bool

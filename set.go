@@ -2,10 +2,61 @@ package cache
 
 import (
 	"sync"
+	"time"
 )
 
 type Set struct {
 	items *sync.Map
+}
+
+func (s *Set) Key() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *Set) Get() (any, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *Set) Update() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *Set) Delete() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *Set) CacheErr() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *Set) Static() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *Set) Valid() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *Set) Invalid() {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *Set) TTL() time.Duration {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *Set) PrimaryKey() KeySet {
+	//TODO implement me
+	panic("implement me")
 }
 
 func NewSet(items ...Item) *Set {
@@ -19,7 +70,7 @@ func (s *Set) Put(item Item) {
 	s.items.Store(item.Key(), item)
 }
 
-func (s *Set) Get(key string) Item {
+func (s *Set) GetByKey(key string) Item {
 	v, ok := s.items.Load(key)
 	if ok {
 		return v.(Item)
@@ -29,13 +80,13 @@ func (s *Set) Get(key string) Item {
 func (s *Set) Del() error {
 	var err error
 	s.items.Range(func(key, value any) bool {
-		err = value.(Item).Delete()
+		err = value.(Item).Del()
 		return true
 	})
 	return err
 }
 func (s *Set) GetValue(key string) (any, error) {
-	item := s.Get(key)
+	item := s.GetByKey(key)
 	if item == nil {
 		return nil, nil
 	}
@@ -60,9 +111,6 @@ func (s *Set) Values() ([]any, error) {
 func (s *Set) Contains(key string) bool {
 	_, ok := s.items.Load(key)
 	return ok
-}
-func (s *Set) FirstValue() (any, error) {
-	return nil, nil
 }
 func (s *Set) Len() int {
 	c := 0

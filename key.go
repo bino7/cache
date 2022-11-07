@@ -13,12 +13,17 @@ type KeySet interface {
 	Remove(key string)
 }
 type keySet struct {
+	key  string
 	keys []string
 	mu   sync.Mutex
 }
 
-func NewKeySet(keys []string) *keySet {
-	return &keySet{keys: keys}
+func NewKeySet(key string, keys []string) KeySet {
+	return &keySet{key: key, keys: keys}
+}
+
+func (ks *keySet) Key() string {
+	return ks.key
 }
 func (ks *keySet) Len() int {
 	ks.mu.Lock()
@@ -34,6 +39,11 @@ func (ks *keySet) Contains(key string) bool {
 		}
 	}
 	return false
+}
+func (ks *keySet) Add(key string) {
+	ks.mu.Lock()
+	defer ks.mu.Unlock()
+	ks.keys = append(ks.keys, key)
 }
 func (ks *keySet) Remove(key string) {
 	ks.mu.Lock()

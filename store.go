@@ -54,42 +54,10 @@ func (s *Store) Get(key string) (any, error) {
 	}
 	return nil, nil
 }
-func (s *Store) Notify(event *CacheResourceEvent) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	switch event.Event {
-	case ADD_EVENT:
-		for _, cache := range s.caches {
-			if !cache.Static() {
-				cache.Invalid()
-			}
-		}
-	case UPDATE_EVENT:
-		for _, cache := range s.caches {
-			if !cache.Static() {
-				cache.Invalid()
-			} else {
-				/*if cache.Contains(event.Key) {
+func (s *Store) Del(key string) error {
+	return nil
+}
 
-				  }
-				  if cache.Len() == 0 {
-				      cache.Invalid()
-				      s.caches[cache.Key()] = nil
-				  }*/
-			}
-		}
-	case DEL_EVENT:
-		for _, cache := range s.caches {
-			if !cache.Static() {
-				cache.Invalid()
-			} else {
-				/* cache.Remove(event.Key)
-				   if cache.Len() == 0 {
-				       cache.Invalid()
-				       s.caches[cache.Key()] = nil
-				   }*/
-			}
-		}
-	}
-
+func (s *Store) Update(key string, value interface{}) error {
+	return nil
 }
