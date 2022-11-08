@@ -7,7 +7,7 @@ import (
 )
 
 type Item interface {
-	Key
+	KV
 	Get() (any, error)
 	Update() error
 	Del() error
@@ -16,7 +16,7 @@ type Item interface {
 	Valid() bool
 	Invalid()
 	TTL() time.Duration
-	PrimaryKey() KeySet
+	PrimaryKey() KV
 }
 
 type SaveFunc func(value interface{}) error
@@ -45,7 +45,7 @@ type Option struct {
 	TTL      time.Duration
 }
 
-func New(key string, value any, o *Option) *CacheItem {
+func New(key string, value any, o *Option) Item {
 	return &CacheItem{
 		cache:    redis,
 		getFunc:  o.GetFunc,
@@ -67,83 +67,57 @@ type CacheItem struct {
 	value      any
 	ttl        time.Duration
 	err        error
-	itemSet    *Set
 	static     bool
 	valid      bool
 	len        int
-	primaryKey KeySet
+	primaryKey KV
+	associates []Item
 }
 
 func (c *CacheItem) TTL() time.Duration {
 	return c.ttl
 }
-
-func (c *CacheItem) PrimaryKey() KeySet {
+func (c *CacheItem) PrimaryKey() KV {
 	return c.primaryKey
 }
-
-func (c *CacheItem) Len() int {
-	if c.itemSet != nil {
-		return c.itemSet.Len()
-	}
-	return c.len
-}
-
-func (c *CacheItem) Contains(key string) bool {
-	if c.itemSet != nil {
-		return c.itemSet.Contains(key)
-	}
-	return c.len > 0 && c.key == key
-}
-
-func (c *CacheItem) Remove(key string) {
-	if c.itemSet != nil {
-		c.itemSet.Remove(key)
-		return
-	}
-	if c.key == key {
-		c.len = 0
-	}
-}
-
 func (c *CacheItem) Static() bool {
 	return c.static
 }
-
 func (c *CacheItem) Valid() bool {
 	return c.valid
 }
-
 func (c *CacheItem) Invalid() {
 	c.valid = false
 }
-
 func (c *CacheItem) defaultContext() context.Context {
 	ctx, _ := context.WithTimeout(context.Background(), 1*time.Minute)
 	return ctx
 }
-
 func (c *CacheItem) Get() (dest any, err error) {
+	return c.get()
+}
+func (c *CacheItem) get() (any, error) {
+	if c.primaryKey != nil {
+		return c.primaryKey.Value(), nil
+	}
 	key := c.key
 	c.err = c.cache.Get(c.defaultContext(), key, c.value)
 	if c.err == nil {
-		return
+		return c.value, nil
 	}
-	err = c.getFunc(c.value)
+	err := c.getFunc(c.value)
 	if err != nil {
-		return
+		return nil, err
 	}
 	c.err = c.set(c.key, c.value)
+	if c.err == nil {
+		c.valid = true
+	}
 	return c.value, nil
 }
 func (c *CacheItem) set(key string, dest any) error {
-	if _, ok := dest.(Item); ok {
-	}
-	if items, ok := dest.([]Item); ok {
-		c.itemSet = NewSet(items...)
-	}
-
 	c.err = c.cache.Set(&rediscache.Item{
+		Ctx:   defaultContext(),
 		Key:   key,
 		Value: dest,
 		TTL:   c.ttl,
@@ -162,7 +136,7 @@ func (c *CacheItem) Update() error {
 	_ = c.set(key, c.value)
 	return nil
 }
-func (c *CacheItem) Delete() error {
+func (c *CacheItem) Del() error {
 	key := c.key
 	c.err = c.cache.Delete(c.defaultContext(), key)
 	if c.delFunc != nil {
@@ -173,11 +147,12 @@ func (c *CacheItem) Delete() error {
 	}
 	return nil
 }
-
 func (c *CacheItem) CacheErr() error {
 	return c.err
 }
-
 func (c *CacheItem) Key() string {
 	return c.key
+}
+func (c *CacheItem) Value() (any, error) {
+	return c.get()
 }

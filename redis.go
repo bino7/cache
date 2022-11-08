@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"fmt"
 	goredis "github.com/go-redis/redis/v8"
 	redigo "github.com/gomodule/redigo/redis"
@@ -43,6 +44,8 @@ func dial(network, address, password string) (redigo.Conn, error) {
 	return c, err
 }
 
+var client *goredis.Client
+
 func newRedisClient(conf *Config) *goredis.Client {
 	return goredis.NewClient(&goredis.Options{
 		Addr:        fmt.Sprintf("%s:%d", conf.Host, conf.Port),
@@ -51,4 +54,10 @@ func newRedisClient(conf *Config) *goredis.Client {
 		PoolSize:    conf.MaxActive,
 		IdleTimeout: conf.IdleTimeout,
 	})
+}
+
+var ctx context.Context
+
+func defaultContext() context.Context {
+	return ctx
 }
